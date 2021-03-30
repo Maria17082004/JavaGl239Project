@@ -138,6 +138,6 @@ public class Problem {
         Figures.renderPoint(gl,new Vector2(-0.1,0.5),3);
         Figures.renderPoint(gl,new Vector2(-0.1,-0.5),1);
         Figures.renderPoint(gl,new Vector2(-0.1,-0.9),1);
-        Figures.renderPoint(gl,new Vector2(0.0,-0.5),1);
+
     }
 }
