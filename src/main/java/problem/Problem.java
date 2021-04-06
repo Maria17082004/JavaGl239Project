@@ -3,6 +3,7 @@ package problem;
 import javax.media.opengl.GL2;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 /**
@@ -13,116 +14,172 @@ public class Problem {
      * текст задачи
      */
     public static final String PROBLEM_TEXT = "ПОСТАНОВКА ЗАДАЧИ:\n" +
-            "Заданы два множества точек в пространстве.\n" +
-            "Требуется построить пересечения и разность этих множеств";
+            "Заданы точки\n" +
+            "Требуется найти точку, являющуюся пересечением пары прямых построенных на заданных точках,\n" +
+            "лежащую на минимальном удалении от начала координат";
 
-    /**
-     * заголовок окна
-     */
-    public static final String PROBLEM_CAPTION = "Итоговый проект ученика 10-7 Иванова Ивана";
+    public static final String PROBLEM_CAPTION = "Итоговый проект ученицы Мокеевой Марии (10-2)";
 
-    /**
-     * путь к файлу
-     */
-    private static final String FILE_NAME = "points.txt";
+    private static final String POINTS_FILE_NAME = "points.txt";
+    private static final String LINES_FILE_NAME = "lines.txt";
+    private static final String INTERSECTION_FILE_NAME = "intersection.txt";
 
-    /**
-     * список точек
-     */
-    private ArrayList<Point> points;
+    private final ArrayList<Point> points;
+    private ArrayList<Line> linesToDraw;
+    private Point intersection;
+    private Axes axes;
 
-    /**
-     * Конструктор класса задачи
-     */
     public Problem() {
+        axes = new Axes();
         points = new ArrayList<>();
+        linesToDraw = new ArrayList<>();
+        intersection = new Point();
     }
 
-    /**
-     * Добавить точку
-     *
-     * @param x      координата X точки
-     * @param y      координата Y точки
-     * @param setVal номер множества
-     */
-    public void addPoint(double x, double y, int setVal) {
-        Point point = new Point(x, y, setVal);
-        points.add(point);
+    public void addPoint(double x, double y) {
+        points.add(new Point(x, y));
     }
 
-    /**
-     * Решить задачу
-     */
     public void solve() {
-        // перебираем пары точек
-        for (Point p : points) {
-            for (Point p2 : points) {
-                // если точки являются разными
-                if (p != p2) {
-                    // если координаты у них совпадают
-                    if (Math.abs(p.x - p2.x) < 0.0001 && Math.abs(p.y - p2.y) < 0.0001) {
-                        p.isSolution = true;
-                        p2.isSolution = true;
-                    }
+        for (Point point : points)
+            point.setType(PointType.UNUSED);
+
+        ArrayList<Line> lines = new ArrayList<>();
+        for (Point begin : points) {
+            for (Point end : points) {
+                if (!end.equals(begin)) {
+                    lines.add(new Line(begin, end));
+                }
+            }
+        }
+
+        if (intersection.type == PointType.NONE) {
+            intersection.x = 1;
+            intersection.y = 1;
+        }
+
+        double minSize = 1;
+        for (Line first : lines) {
+            if (first.distanceFromOrigin() > intersection.size())
+                continue;
+
+            for (Line second : lines) {
+                if (second.distanceFromOrigin() > intersection.size())
+                    continue;
+
+                Vec2 intersection = first.findIntersection(second);
+                if (intersection.sizeSq() < minSize) {
+                    minSize = intersection.sizeSq();
+                    this.intersection = new Point(intersection, PointType.INTERSECTION);
+
+                    linesToDraw = new ArrayList<>();
+                    linesToDraw.add(first);
+                    linesToDraw.add(second);
+                }
+            }
+        }
+
+        for (Line line : linesToDraw) {
+            for (Point point : points) {
+                if (point == line.begin || point == line.end) {
+                    point.setType(PointType.PAIRED);
                 }
             }
         }
     }
 
-    /**
-     * Загрузить задачу из файла
-     */
     public void loadFromFile() {
+        // Загрузка точек
         points.clear();
         try {
-            File file = new File(FILE_NAME);
+            File file = new File(POINTS_FILE_NAME);
             Scanner sc = new Scanner(file);
             // пока в файле есть непрочитанные строки
             while (sc.hasNextLine()) {
-                double x = sc.nextDouble();
-                double y = sc.nextDouble();
-                int setVal = sc.nextInt();
+                Point point = new Point(sc.nextDouble(), sc.nextDouble());
                 sc.nextLine();
-                Point point = new Point(x, y, setVal);
+
+                point.setType(PointType.valueOf(sc.nextLine()));
                 points.add(point);
             }
         } catch (Exception ex) {
             System.out.println("Ошибка чтения из файла: " + ex);
         }
+
+        // Загрузка линий
+        linesToDraw.clear();
+        try {
+            File file = new File(LINES_FILE_NAME);
+            Scanner sc = new Scanner(file);
+            while (sc.hasNextLine()) {
+                linesToDraw.add(new Line(new Vec2(sc.nextDouble(), sc.nextDouble()), new Vec2(sc.nextDouble(), sc.nextDouble())));
+                sc.nextLine();
+            }
+        } catch (Exception ex) {
+            System.out.println("Ошибка чтения из файла: " + ex);
+        }
+
+        // Загрузка точки пересечения
+        try {
+            File file = new File(INTERSECTION_FILE_NAME);
+            Scanner sc = new Scanner(file);
+            intersection = new Point(new Vec2(sc.nextDouble(), sc.nextDouble()), PointType.INTERSECTION);
+        } catch (NoSuchElementException ex) {
+            System.out.println("Точка пересечения не была сохранена");
+        } catch (Exception ex) {
+            System.out.println("Ошибка чтения из файла: " + ex);
+        }
     }
 
-    /**
-     * Сохранить задачу в файл
-     */
     public void saveToFile() {
+        // Сохранение точек
         try {
-            PrintWriter out = new PrintWriter(new FileWriter(FILE_NAME));
+            PrintWriter out = new PrintWriter(new FileWriter(POINTS_FILE_NAME));
             for (Point point : points) {
-                out.printf("%.2f %.2f %d\n", point.x, point.y, point.setNumber);
+                out.printf("%.4f %.4f\n", point.x, point.y);
+                out.println(point.type);
             }
+
+            out.close();
+        } catch (IOException ex) {
+            System.out.println("Ошибка записи в файл: " + ex);
+        }
+
+        // Сохранение прямых
+        try {
+            PrintWriter out = new PrintWriter(new FileWriter(LINES_FILE_NAME));
+            for (Line line : linesToDraw) {
+                out.printf("%.4f %.4f %.4f %.4f\n", line.begin.x, line.begin.y, line.end.x, line.end.y);
+            }
+
+            out.close();
+        } catch (IOException ex) {
+            System.out.println("Ошибка записи в файл: " + ex);
+        }
+
+        // Сохранение точки пересечения
+        try {
+            PrintWriter out = new PrintWriter(new FileWriter(INTERSECTION_FILE_NAME));
+
+            if (intersection.type != PointType.NONE)
+                out.printf("%.4f %.4f\n", intersection.x, intersection.y);
+
             out.close();
         } catch (IOException ex) {
             System.out.println("Ошибка записи в файл: " + ex);
         }
     }
 
-    /**
-     * Добавить заданное число случайных точек
-     *
-     * @param n кол-во точек
-     */
     public void addRandomPoints(int n) {
         for (int i = 0; i < n; i++) {
-            Point p = Point.getRandomPoint();
-            points.add(p);
+            points.add(Point.makeRandomPoint());
         }
     }
 
-    /**
-     * Очистить задачу
-     */
     public void clear() {
         points.clear();
+        linesToDraw.clear();
+        intersection.setType(PointType.NONE);
     }
 
     /**
@@ -131,11 +188,20 @@ public class Problem {
      * @param gl переменная OpenGL для рисования
      */
     public void render(GL2 gl) {
-//        for (Point point : points) {
-//            point.render(gl);
-//        }
-        Figures.renderPoint(gl,new Vector2(0.1,0.5),5);
-        Figures.renderPoint(gl,new Vector2(-0.1,0.5),3);
+        axes.render(gl);
+
+        for (Point point : points) {
+            point.render(gl);
+        }
+
+        for (Line line : linesToDraw)
+            line.render(gl);
+
+        Line fromOriginToPoint = new Line(new Vec2(0,0), intersection);
+        fromOriginToPoint.setColor(0.3, 0.5, 0.5);
+        fromOriginToPoint.render(gl);
+
+        intersection.render(gl);
 
 
     }

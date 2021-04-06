@@ -76,48 +76,23 @@ class RendererGL implements GLEventListener {
         gl.glFlush();
     }
 
-
-    /**
-     * Получить область рисования
-     *
-     * @return область рисования
-     */
     GLCanvas getCanvas() {
         return canvas;
     }
 
-    /**
-     * Закрыть рисовальщик
-     */
     void close() {
         animator.stop();
         System.out.println("terminated");
     }
 
-    /**
-     * Обработчик завершения рисования
-     *
-     * @param drawable объект рисования OpenGL
-     */
     @Override
     public void dispose(GLAutoDrawable drawable) {
-        // обработчик закрытия формы
         animator.stop();
     }
 
-    /**
-     * Обработчик изменения размеров окна
-     *
-     * @param drawable объект рисования OpenGL
-     * @param posX     координата X окна
-     * @param posY     координата Y окна
-     * @param width    ширина окна
-     * @param height   высота окна
-     */
     @Override
     public void reshape(GLAutoDrawable drawable, int posX, int posY, int width, int height) {
-        // если изменились размеры окна
-        // т.к. у нас размеры окна динамически вычисляются в display(), то нам этот метод не нужен
+        // if window resized -> do not do anything
     }
 
 

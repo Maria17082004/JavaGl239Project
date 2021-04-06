@@ -3,94 +3,64 @@ package problem;
 import javax.media.opengl.GL;
 import javax.media.opengl.GL2;
 import java.util.Random;
+import problem.PointType.*;
 
-/**
- * Класс точки
- */
-public class Point {
-    /**
-     * константа множества 1
-     */
-    public static final int SET_1 = 0;
-    /**
-     * константа множества 2
-     */
-    public static final int SET_2 = 1;
-    /**
-     * номер множества
-     */
-    int setNumber;
-    /**
-     * пересекается ли точка с точкой из другого множества
-     * (является ли она решением)
-     */
-    boolean isSolution = false;
-    /**
-     * x - координата точки
-     */
-    double x;
-    /**
-     * y - координата точки
-     */
-    double y;
+public class Point extends Vec2 {
+    PointType type;
 
-    /**
-     * Конструктор точки
-     *
-     * @param x         координата
-     * @param y         координата y
-     * @param setNumber номер множества, к которому принадлежит точка
-     */
-    Point(double x, double y, int setNumber) {
+    Point() {
+        x = 0;
+        y = 0;
+        type = PointType.NONE;
+    }
+
+    Point(double x, double y) {
         this.x = x;
         this.y = y;
-        this.setNumber = setNumber;
+        this.type = PointType.UNUSED;
     }
 
-    /**
-     * Получить случайную точку
-     *
-     * @return случайная точка
-     */
-    static Point getRandomPoint() {
+    Point(Vec2 position, PointType type) {
+        this.x = position.x;
+        this.y = position.y;
+        this.type = type;
+    }
+
+    void setType(PointType type) {
+        this.type = type;
+    }
+
+    static Point makeRandomPoint() {
         Random r = new Random();
-        double nx = (double) r.nextInt(50) / 25 - 1;
-        double ny = (double) r.nextInt(50) / 25 - 1;
-        int nSetVal = r.nextInt(2);
-        return new Point(nx, ny, nSetVal);
+        return new Point(new Vec2(r.nextDouble() * 2 - 1, r.nextDouble() * 2 - 1), PointType.UNUSED);
     }
 
-    /**
-     * Рисование точки
-     *
-     * @param gl переменная OpenGl для рисования
-     */
     void render(GL2 gl) {
-        if (isSolution)
-            gl.glColor3d(1.0, 0.0, 0.0);
-        else
-            switch (setNumber) {
-                case Point.SET_1:
-                    gl.glColor3d(0.0, 1.0, 0.0);
-                    break;
-                case Point.SET_2:
-                    gl.glColor3d(0.0, 0.0, 1.0);
-                    break;
-            }
-        gl.glPointSize(3);
+        switch(type) {
+            case UNUSED:
+                gl.glColor3d(0.5, 0.5, 0.5);
+                gl.glPointSize(2);
+                break;
+            case PAIRED:
+                gl.glColor3d(0.3, 1.0, 0.3);
+                gl.glPointSize(3);
+                break;
+            case INTERSECTION:
+                gl.glColor3d(1.0, 0.3, 0.0);
+                gl.glPointSize(4);
+                break;
+
+            case NONE:
+                return;
+
+            default:
+                /* Impossible to get here, maybe should raise error, todo */
+                return;
+        }
+
         gl.glBegin(GL.GL_POINTS);
         gl.glVertex2d(x, y);
         gl.glEnd();
         gl.glPointSize(1);
-    }
-
-    /**
-     * Получить строковое представление точки
-     *
-     * @return строковое представление точки
-     */
-    @Override
-    public String toString() {
-        return "Точка с координатами: {" + x + "," + y + "} из множества: " + setNumber;
     }
 }
