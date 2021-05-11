@@ -16,6 +16,7 @@ public class Figures {
         gl.glColor3d(0.5, 0.0, 1.0);
         gl.glVertex2d(posend.x, posend.y);
         gl.glEnd();
+
     }
     public static void renderTriangle(GL2 gl, Vec2 pos1, Vec2 pos2, Vec2 pos3, boolean filled) {
         if (filled) {
