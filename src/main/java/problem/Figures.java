@@ -26,6 +26,7 @@ public class Figures {
             gl.glVertex2d(pos2.x, pos2.y);
             gl.glVertex2d(pos3.x, pos3.y);
             gl.glEnd();
+
         } else {
             gl.glLineWidth(7);
             gl.glBegin(GL.GL_LINES);
